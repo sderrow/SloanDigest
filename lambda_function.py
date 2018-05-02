@@ -1,11 +1,14 @@
 import boto3
 import json
 import uuid
-from datetime import datetime, date
+from datetime import datetime
 from googleapiclient.discovery import build
 from httplib2 import Http
 from oauth2client import file
 import pytz
+
+s3 = boto3.resource("s3")
+bucket = s3.Bucket("sloandigest")
 
 
 def load_sloangroups():
@@ -94,6 +97,8 @@ def setup_google_sheets():
 
 
 def scrape_key_academics():
+    global service
+    service = setup_google_sheets()
     SPREADSHEET_ID = '1z1A4DQRTGwE4rzh5bpNXC85J8XPs3ZsWHVOgu_C-Ioo'
     RANGE_NAME = 'Sheet1!A2:B27'
     result = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
@@ -117,6 +122,7 @@ def craft_key_academics_text():
 
 
 def load_meet_sloanie():
+    global service
     SPREADSHEET_ID = '1G6oJTyR7NVjN79JgW2Qf7cs2U7-EGkBL-e3LNW--hZE'
     RANGE_NAME = 'Form Responses 1!B2:L30'
     result = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
@@ -171,11 +177,6 @@ def export_news_data(digest):
         ContentType="application/json"
     )
     print(response)
-
-
-s3 = boto3.resource("s3")
-bucket = s3.Bucket("sloandigest")
-service = setup_google_sheets()
 
 
 def lambda_handler(event, context):
