@@ -1,7 +1,11 @@
 import boto3
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, date
+from googleapiclient.discovery import build
+from httplib2 import Http
+from oauth2client import file
+import pytz
 
 s3 = boto3.resource("s3")
 bucket = s3.Bucket("sloandigest")
@@ -19,8 +23,7 @@ def load_sloangroups():
     return txt_j
 
 
-def parse_date(event_date):
-    dt = datetime.strptime(event_date, "%Y-%m-%dT%H:%M:%S")
+def dt_formatter(dt):
     wkdy = dt.strftime("%A")
     mth = dt.strftime("%B")
     nub = int(dt.strftime("%d"))
@@ -33,6 +36,11 @@ def parse_date(event_date):
     else:
         ext = 'th'
     return "{}, {} {:d}{}".format(wkdy, mth, nub, ext)
+
+
+def parse_date(event_date):
+    dt = datetime.strptime(event_date, "%Y-%m-%dT%H:%M:%S")
+    return dt_formatter(dt)
 
 
 def craft_sloangroups():
@@ -82,14 +90,35 @@ def craft_sloangroups():
     return txt
 
 
-def load_key_academics():
-    return ""
+def setup_google_sheets():
+    store = file.Storage('credentials.json')
+    creds = store.get()
+    service = build('sheets', 'v4', http=creds.authorize(Http()))
+    return service
+
+
+def scrape_key_academics():
+    service = setup_google_sheets()
+    SPREADSHEET_ID = '1z1A4DQRTGwE4rzh5bpNXC85J8XPs3ZsWHVOgu_C-Ioo'
+    RANGE_NAME = 'Sheet1!A2:B27'
+    result = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
+                                                 range=RANGE_NAME).execute()
+    values = result.get('values', [])
+    if not values:
+        print('No data found.')
+    else:
+        for row in values:
+            d = datetime.strptime(row[0], "%m/%d/%Y").date()
+            t = datetime.now(pytz.timezone('US/Eastern')).date()
+            diff = d - t
+            if diff.total_seconds() >= 0:
+                return d, row[1]
 
 
 def craft_key_academics_text():
-    begin = "In key academic dates, "
-    content = load_key_academics()
-    return begin + content
+    nxt_date, event = scrape_key_academics()
+    txt = "In key academic dates, the next big item is {} on {}. . ".format(event, dt_formatter(nxt_date))
+    return txt
 
 
 def load_meet_sloanie():
@@ -113,7 +142,9 @@ def craft_shoutouts():
 
 
 def create_main_text():
-    return craft_sloangroups()
+    msg = craft_sloangroups()
+    msg += craft_key_academics_text()
+    return msg
 
 
 def create_feed():
