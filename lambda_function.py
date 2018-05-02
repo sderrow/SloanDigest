@@ -48,6 +48,37 @@ def craft_sloangroups():
         parse_date(first["eventDate"])
     )
 
+    second = js[1]
+    txt += "Next, the {} is hosting {}, a {} event taking place on {}. You don't want to miss out! . ".format(
+        second["group"],
+        second["title"],
+        second["eventType"],
+        parse_date(second["eventDate"])
+    )
+
+    third = js[2]
+    txt += "Another event you might be interested in is {}, hosted by the {}. Register on SloanGroups to join {} Sloanies on {}. . ".format(
+        third["title"],
+        third["group"],
+        third["registrations"],
+        parse_date(third["eventDate"])
+    )
+
+    fourth = js[3]
+    txt += "Ready for a couple more? Because you won’t want to miss out on {}, hosted by the {} on {}. {} members of the Sloan community are attending – will you? . ".format(
+        fourth["title"],
+        fourth["group"],
+        parse_date(fourth["eventDate"]),
+        fourth["registrations"]
+    )
+
+    fifth = js[4]
+    txt += " Finally, check out {}, an event taking place on {} hosted by the {}. . ".format(
+        fifth["title"],
+        parse_date(fifth["eventDate"]),
+        fifth["group"]
+    )
+
     return txt
 
 
