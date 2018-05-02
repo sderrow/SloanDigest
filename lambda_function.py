@@ -7,9 +7,6 @@ from httplib2 import Http
 from oauth2client import file
 import pytz
 
-s3 = boto3.resource("s3")
-bucket = s3.Bucket("sloandigest")
-
 
 def load_sloangroups():
     # bucket.Object("sloangroups.json").download_file('/tmp/sloangroups.json')
@@ -93,12 +90,10 @@ def craft_sloangroups():
 def setup_google_sheets():
     store = file.Storage('credentials.json')
     creds = store.get()
-    service = build('sheets', 'v4', http=creds.authorize(Http()))
-    return service
+    return build('sheets', 'v4', http=creds.authorize(Http()))
 
 
 def scrape_key_academics():
-    service = setup_google_sheets()
     SPREADSHEET_ID = '1z1A4DQRTGwE4rzh5bpNXC85J8XPs3ZsWHVOgu_C-Ioo'
     RANGE_NAME = 'Sheet1!A2:B27'
     result = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
@@ -150,7 +145,7 @@ def create_main_text():
 def create_feed():
     uid = str(uuid.uuid4())
     current_datetime = datetime.utcnow()
-    title = "SloanDigest for MBA First Years"
+    title = "SloanDigest First Cut"
     main_text = create_main_text()
 
     item = {
@@ -172,6 +167,11 @@ def export_news_data(digest):
         ContentType="application/json"
     )
     print(response)
+
+
+s3 = boto3.resource("s3")
+bucket = s3.Bucket("sloandigest")
+service = setup_google_sheets()
 
 
 def lambda_handler(event, context):
