@@ -138,20 +138,11 @@ def craft_meet_sloanie():
     return txt
 
 
-def load_shoutouts():
-    return ""
-
-
-def craft_shoutouts():
-    begin = "Lastly, here are today's Shoutouts! "
-    content = load_shoutouts()
-    return begin + content
-
-
 def create_main_text():
     msg = craft_sloangroups()
     msg += craft_key_academics_text()
     msg += craft_meet_sloanie()
+    msg += "That's it for SloanDigest. . Talk to you next time!"
     return msg
 
 
@@ -192,4 +183,4 @@ def lambda_handler(event, context):
     export_news_data(news)
 
 
-lambda_handler("", "")
+# lambda_handler("", "")
