@@ -117,13 +117,25 @@ def craft_key_academics_text():
 
 
 def load_meet_sloanie():
-    return ""
+    SPREADSHEET_ID = '1G6oJTyR7NVjN79JgW2Qf7cs2U7-EGkBL-e3LNW--hZE'
+    RANGE_NAME = 'Form Responses 1!B2:L30'
+    result = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
+                                                 range=RANGE_NAME).execute()
+    values = result.get('values', [])
+    if not values:
+        print('No data found.')
+    else:
+        return values[0]
 
 
 def craft_meet_sloanie():
-    begin = "For today's Meet a Sloanie, "
-    content = load_meet_sloanie()
-    return begin + content
+    first, last, prog, yr, prev_job, prev_emp, town, fav1, fav2, pty1, pty2 = load_meet_sloanie()
+    txt = "There are so many people to meet and learn from at Sloan! Today’s featured Sloanie is "
+    txt += "{} {}! . {} is a member of the {} class of {}. . ".format(first, last, first, prog, yr)
+    txt += "On paper, {} is a former {} from {} and is a {} native. . But if you dig beneath the surface, you’ll learn {} is also a fan of {} and {}. . ".format(first, prev_job, prev_emp, town, first, fav1, fav2)
+    txt += "If there’s one thing to know about Sloanies, it’s that they are passionate people. For example, {} prioritizes {} and {} while at Sloan. . ".format(first, pty1, pty2)
+    txt += "Great to have you with us on campus {}! . ".format(first)
+    return txt
 
 
 def load_shoutouts():
@@ -139,6 +151,7 @@ def craft_shoutouts():
 def create_main_text():
     msg = craft_sloangroups()
     msg += craft_key_academics_text()
+    msg += craft_meet_sloanie()
     return msg
 
 
