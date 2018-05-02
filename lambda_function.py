@@ -12,26 +12,27 @@ bucket = s3.Bucket("sloandigest")
 
 
 def load_sloangroups():
-    # bucket.Object("sloangroups.json").download_file('/tmp/sloangroups.json')
-    # with open('/tmp/sloangroups.json', 'r') as f:
-    #     print(f.read())
-    # return True
-
     sloangroups_file = bucket.Object("sloangroups.json")
     txt = sloangroups_file.get()['Body'].read().decode('utf-8')
     txt_j = json.loads(txt)["value"]
     return txt_j
 
 
+def date_has_passed(d):
+    t = datetime.now(pytz.timezone('US/Eastern')).date()
+    diff = d - t
+    return diff.total_seconds() < 0
+
+
 def dt_formatter(dt):
     wkdy = dt.strftime("%A")
     mth = dt.strftime("%B")
     nub = int(dt.strftime("%d"))
-    if nub == 1:
+    if nub in [1, 21, 31]:
         ext = 'st'
-    elif nub == 2:
+    elif nub in [2, 22]:
         ext = 'nd'
-    elif nub == 3:
+    elif nub in [3, 23]:
         ext = 'rd'
     else:
         ext = 'th'
@@ -43,48 +44,62 @@ def parse_date(event_date):
     return dt_formatter(dt)
 
 
+def parse_group(event_group):
+    if event_group.lower()[-4:] == 'club':
+        return "the {}".format(event_group)
+    return event_group
+
+
 def craft_sloangroups():
     js = load_sloangroups()
-    txt = "I'll start with events on SloanGroups. . "
 
-    first = js[0]
-    txt += "First, consider taking part in a {} event, hosted by the {}. The name of the event is {}. . There are already {} people planning to participate. Join them on {}. . ".format(
+    i = 0
+    for k, j in enumerate(js):
+        i = k
+        dt = datetime.strptime(j["eventDate"], "%Y-%m-%dT%H:%M:%S").date()
+        if not date_has_passed(dt):
+            break
+
+    txt = "I'll start with events on SloanGroups. <break time=\"1s\"/> "
+
+    first = js[i]
+    txt += "First, consider taking part in a {} event, hosted by {}. The name of the event is {}. There are already {} people planning to participate. Join them on {}. <break time=\"1s\"/> ".format(
         first["eventType"],
-        first["group"],
+        parse_group(first["group"]),
         first["title"],
         first["registrations"],
         parse_date(first["eventDate"])
     )
 
-    second = js[1]
-    txt += "Next, the {} is hosting {}, a {} event taking place on {}. You don't want to miss out! . ".format(
-        second["group"],
+    second = js[i+1]
+    txt += "Next, {} is hosting {}, a {} event taking place on {}. You don't want to miss out! <break time=\"1s\"/> ".format(
+        parse_group(second["group"]),
         second["title"],
         second["eventType"],
         parse_date(second["eventDate"])
     )
 
-    third = js[2]
-    txt += "Another event you might be interested in is {}, hosted by the {}. Register on SloanGroups to join {} Sloanies on {}. . ".format(
+    third = js[i+2]
+    txt += "Another event you might be interested in is {}, hosted by {}. Register on SloanGroups to join {} Sloanies on {}. <break time=\"1s\"/> ".format(
         third["title"],
-        third["group"],
+        parse_group(third["group"]),
         third["registrations"],
         parse_date(third["eventDate"])
     )
 
-    fourth = js[3]
-    txt += "Ready for a couple more? Because you won’t want to miss out on {}, hosted by the {} on {}. {} members of the Sloan community are attending – will you? . ".format(
+    fourth = js[i+3]
+    txt += "Ready for a couple more? Because you won’t want to miss out on {}, hosted by {} on {}. {} members of the Sloan community are attending – will you? <break time=\"1s\"/> ".format(
         fourth["title"],
-        fourth["group"],
+        parse_group(fourth["group"]),
         parse_date(fourth["eventDate"]),
         fourth["registrations"]
     )
 
-    fifth = js[4]
-    txt += " Finally, check out {}, an event taking place on {} hosted by the {}. . ".format(
+    fifth = js[i+4]
+    txt += " Finally, check out {}, an event taking place on {} hosted by {}. <break time=\"2s\"/> ".format(
         fifth["title"],
         parse_date(fifth["eventDate"]),
-        fifth["group"]
+        parse_group(fifth["group"])
     )
 
     return txt
@@ -109,38 +124,38 @@ def scrape_key_academics():
     else:
         for row in values:
             d = datetime.strptime(row[0], "%m/%d/%Y").date()
-            t = datetime.now(pytz.timezone('US/Eastern')).date()
-            diff = d - t
-            if diff.total_seconds() >= 0:
+            if not date_has_passed(d):
                 return d, row[1]
 
 
 def craft_key_academics_text():
     nxt_date, event = scrape_key_academics()
-    txt = "In key academic dates, the next big item is {} on {}. . ".format(event, dt_formatter(nxt_date))
+    txt = "In key academic dates, the next big item is {} on {}. <break time=\"2s\"/> ".format(event, dt_formatter(nxt_date))
     return txt
 
 
 def load_meet_sloanie():
     global service
     SPREADSHEET_ID = '1G6oJTyR7NVjN79JgW2Qf7cs2U7-EGkBL-e3LNW--hZE'
-    RANGE_NAME = 'Form Responses 1!B2:L30'
+    RANGE_NAME = 'Form Responses 1!B2:N100'
     result = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
                                                  range=RANGE_NAME).execute()
     values = result.get('values', [])
     if not values:
         print('No data found.')
     else:
-        return values[0]
+        for row in values:
+            if row[-1] == "No" and row[-2] == "Yes":
+                return row[:-2]
 
 
 def craft_meet_sloanie():
     first, last, prog, yr, prev_job, prev_emp, town, fav1, fav2, pty1, pty2 = load_meet_sloanie()
     txt = "There are so many people to meet and learn from at Sloan! Today’s featured Sloanie is "
-    txt += "{} {}! . {} is a member of the {} class of {}. . ".format(first, last, first, prog, yr)
-    txt += "On paper, {} is a former {} from {} and is a {} native. . But if you dig beneath the surface, you’ll learn {} is also a fan of {} and {}. . ".format(first, prev_job, prev_emp, town, first, fav1, fav2)
-    txt += "If there’s one thing to know about Sloanies, it’s that they are passionate people. For example, {} prioritizes {} and {} while at Sloan. . ".format(first, pty1, pty2)
-    txt += "Great to have you with us on campus {}! . ".format(first)
+    txt += "{} {}! {} is a member of the {} class of {}. ".format(first, last, first, prog, yr)
+    txt += "On paper, {} is a former {} from {} and is a {} native. But if you dig beneath the surface, you’ll learn {} is also a fan of {} and {}. <break time=\"1s\"/> ".format(first, prev_job, prev_emp, town, first, fav1, fav2)
+    txt += "If there’s one thing to know about Sloanies, it’s that they are passionate people. For example, {} prioritizes {} and {} while at Sloan. ".format(first, pty1, pty2)
+    txt += "Great to have you with us on campus {}! <break time=\"2s\"/> ".format(first)
     return txt
 
 
@@ -148,7 +163,8 @@ def create_main_text():
     msg = craft_sloangroups()
     msg += craft_key_academics_text()
     msg += craft_meet_sloanie()
-    msg += "That's it for SloanDigest. . Talk to you next time!"
+    msg += "That's it for SloanDigest. Talk to you next time!"
+    msg = msg.replace("&", "and")
     return msg
 
 
