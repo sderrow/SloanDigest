@@ -142,6 +142,16 @@ def craft_key_academics_text():  # Build out the MIT key academic dates part of 
     return txt
 
 
+def mark_sloanie_featured(spreadsheet_id, i):  # When the script is published, mark the Sloanie that was just featured in "Meet a Sloanie" as "Featured" so they don't show up again
+    range_ = 'Form Responses 1!N' + str(i+2)
+    value_input_option = 'USER_ENTERED'
+    value_range_body = {
+        "values": [["Yes"]]
+    }
+    service.spreadsheets().values().update(spreadsheetId=spreadsheet_id, range=range_,
+                                           valueInputOption=value_input_option, body=value_range_body).execute()
+
+
 def load_meet_sloanie():  # Scrape data from a single response to the "Meet a Sloanie" Google Sheet
     global service
     SPREADSHEET_ID = '1G6oJTyR7NVjN79JgW2Qf7cs2U7-EGkBL-e3LNW--hZE'
@@ -149,14 +159,19 @@ def load_meet_sloanie():  # Scrape data from a single response to the "Meet a Sl
     result = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
                                                  range=RANGE_NAME).execute()
     values = result.get('values', [])
+    selection = []
     if not values:
         print('No data found.')
     else:
-        for person in values:  # Loop through responses and choose the first one that is approved and has yet to be featured
+        for i, person in enumerate(values):  # Loop through responses and choose the first one that is approved and has yet to be featured
             featured_already = person[-1]
             approved = person[-2]
-            if featured_already == "No" and approved == "Yes":
-                return person[:-2]
+            if approved == "Yes":
+                selection = person  # Have a backup ready to go just in case everyone approved has already been featured
+                if featured_already == "No":
+                    mark_sloanie_featured(SPREADSHEET_ID, i)
+                    return selection[:-2]
+        return selection[:-2]  # Use the backup selection if necessary
 
 
 def craft_meet_sloanie():  # Build out the "Meet a Sloanie" section of the briefing
