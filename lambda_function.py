@@ -13,10 +13,6 @@ from httplib2 import Http
 from oauth2client import file
 import pytz
 
-# Initialize the S3 bucket
-s3 = boto3.resource("s3")
-bucket = s3.Bucket("sloandigest")
-
 
 def load_sloangroups():  # Load the SloanGroups JSON file stored on S3
     sloangroups_file = bucket.Object("sloangroups.json")
@@ -120,8 +116,6 @@ def setup_google_sheets():  # Set up the Google Sheets API service
 
 
 def scrape_key_academics():  # Scrape MIT key academic dates from corresponding Google Sheet
-    global service
-    service = setup_google_sheets()
     SPREADSHEET_ID = '1z1A4DQRTGwE4rzh5bpNXC85J8XPs3ZsWHVOgu_C-Ioo'
     RANGE_NAME = 'Sheet1!A2:B27'
     result = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,
@@ -223,6 +217,12 @@ def export_news_data(digest):  # Publish the JSON to the S3 bucket
 def lambda_handler(event, context):
     news = create_feed()
     export_news_data(news)
+
+
+# Initialize the S3 bucket and Google API connection
+s3 = boto3.resource("s3")
+bucket = s3.Bucket("sloandigest")
+service = setup_google_sheets()
 
 
 # lambda_handler("", "")
