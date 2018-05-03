@@ -2,7 +2,7 @@
 
 SloanDigest is an Alexa Flash Briefing Skill to help make MIT Sloan students' lives easier. It aggregates information relating to upcoming events (from SloanGroups), key academic dates (from MIT), and "Meet a Sloanie" profiles from user submissions. SloanDigest is fully automated and can pull updated information at regular intervals (e.g., daily).
 
-SloanDigest reads the briefing from a [JSON feed](https://s3.amazonaws.com/sloandigest/SloanDigest.JSON) hosted on an AWS S3 bucket.
+SloanDigest reads the briefing from a [JSON feed](https://s3.amazonaws.com/sloandigest/SloanDigest.json) hosted on an AWS S3 bucket.
 
 The publishing script is written in Python and lives in AWS Lambda. The script scrapes fresh data from its various inputs (see below) and publishes to the JSON file above.
 
