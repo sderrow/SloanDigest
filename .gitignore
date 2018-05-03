@@ -99,5 +99,5 @@ ENV/
 .mypy_cache/
 
 quickstart.py
-credentials.json
+tmp/
 client_secret.json

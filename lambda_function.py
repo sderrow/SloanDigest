@@ -100,7 +100,7 @@ def craft_sloangroups():  # Build out the SloanGroups events readout of the brie
     )
 
     fifth = js[i+4]
-    txt += " Finally, check out {}, an event taking place on {} hosted by {}. <break time=\"2s\"/> ".format(
+    txt += " Finally, check out {}, an event taking place on {} hosted by {}. <break time=\"1s\"/> ".format(
         fifth["title"],
         parse_date(fifth["eventDate"]),
         parse_group(fifth["group"])
@@ -110,7 +110,7 @@ def craft_sloangroups():  # Build out the SloanGroups events readout of the brie
 
 
 def setup_google_sheets():  # Set up the Google Sheets API service
-    store = file.Storage('credentials.json')
+    store = file.Storage('tmp/credentials.json')
     creds = store.get()
     return build('sheets', 'v4', http=creds.authorize(Http()))
 
@@ -132,7 +132,7 @@ def scrape_key_academics():  # Scrape MIT key academic dates from corresponding 
 
 def craft_key_academics_text():  # Build out the MIT key academic dates part of the briefing
     nxt_date, event = scrape_key_academics()
-    txt = "In key academic dates, the next big item is {} on {}. <break time=\"2s\"/> ".format(event, dt_formatter(nxt_date))
+    txt = "In key academic dates, the next big item is {} on {}. <break time=\"1s\"/> ".format(event, dt_formatter(nxt_date))
     return txt
 
 
@@ -174,7 +174,7 @@ def craft_meet_sloanie():  # Build out the "Meet a Sloanie" section of the brief
     txt += "{} {}! {} is a member of the {} class of {}. ".format(first, last, first, prog, yr)
     txt += "On paper, {} is a former {} from {} and is a {} native. But if you dig beneath the surface, you’ll learn {} is also a fan of {} and {}. <break time=\"1s\"/> ".format(first, prev_job, prev_emp, town, first, fav1, fav2)
     txt += "If there’s one thing to know about Sloanies, it’s that they are passionate people. For example, {} prioritizes {} and {} while at Sloan. ".format(first, pty1, pty2)
-    txt += "Great to have you with us on campus {}! <break time=\"2s\"/> ".format(first)
+    txt += "Great to have you with us on campus {}! <break time=\"1s\"/> ".format(first)
     return txt
 
 
